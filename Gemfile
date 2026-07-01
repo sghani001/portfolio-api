@@ -41,7 +41,7 @@ gem "httparty"
 
 # Background job processing
 gem "sidekiq", "~> 7.0"
-gem "sidekiq-cron", "~> 1.0"
+gem "sidekiq-cron", "~> 2.4"
 # Redis adapter for Sidekiq
 gem "redis", "~> 5.0"
 
