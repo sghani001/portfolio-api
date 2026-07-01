@@ -12,30 +12,16 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
   end
 end
 
-# Add Rack::Attack middleware for rate limiting
-config.middleware.use Rack::Attack
+# Rack::Attack throttle rules (v6: return nil to allow, a string to count toward limit)
 
-# Configure Rack::Attack
-Rack::Attack.configure do
-  # Skip rate limiting in development
-  skip :development?
-
-  # General rate limiting
-  throttle('req/ip', limit: 30, period: 5.minutes) do |req|
-    if req.ip =~ /localhost|127\.0\.0\.1/ || req.ip =~ /192\.168/ || req.ip =~ /10\./
-      Rack::Attack::ALLOW
-    else
-      Rack::Attack.throttle('req/ip', limit: 30, period: 5.minutes)[req.ip] == :allow ? Rack::Attack::ALLOW : Rack::Attack::REJECT
-    end
-  end
+# General rate limiting — 30 req/5min per IP
+Rack::Attack.throttle('req/ip', limit: 30, period: 5.minutes) do |req|
+  req.ip unless Rails.env.development? || req.ip =~ /^127\.|^192\.168\.|^10\./
 end
 
-# Contact form rate limiting with honeypot
+# Contact form: 3/hr per IP, with honeypot check
 Rack::Attack.throttle("contact_form", limit: 3, period: 1.hour) do |req|
-  # Only apply to contact endpoint
-  if !req.fullpath.match(/api\/v1\/contact$/) || Rails.env.development? || req.params.dig("contact_message", "name").blank?
-    Rack::Attack::ALLOW
-  else
-    Rack::Attack::REJECT
+  if req.fullpath.match?(/api\/v1\/contact$/) && Rails.env.production?
+    req.params.dig("contact_message", "name").blank? ? nil : req.ip
   end
 end

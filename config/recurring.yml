@@ -1,0 +1,5 @@
+production:
+  refresh_gem_stats:
+    class: RefreshGemStatsJob
+    schedule: every hour
+    description: "Sync all gem stats from RubyGems.org"

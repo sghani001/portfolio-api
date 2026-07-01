@@ -13,9 +13,6 @@ class GemStat < ApplicationRecord
   # 'updated_at' tracks when this record was last refreshed
   validates :updated_at, presence: true
 
-  # This model is only used by the API layer; no mass-assignment of attributes
-  attr_readonly :name, :downloads, :version
-
   # Helper method to check if stats are stale (older than 24 hours)
   def stale?
     updated_at < 24.hours.ago

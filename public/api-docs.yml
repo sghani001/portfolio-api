@@ -1,0 +1,116 @@
+openapi: "3.0.3"
+info:
+  title: "Syed Ghani Portfolio API"
+  description: |
+    Live API powering the gem-stats widget and contact form at [syedghani.is-a.dev](https://syedghani.is-a.dev).
+    Built with Rails 8 + PostgreSQL + Sidekiq.
+  version: "1.0.0"
+  contact:
+    name: "Syed M. Ghani"
+    url: "https://syedghani.is-a.dev"
+    email: "syedghani001@gmail.com"
+
+servers:
+  - url: "http://localhost:3000"
+    description: "Local development"
+  - url: "https://api.syedghani.is-a.dev"
+    description: "Production"
+
+paths:
+  /api/v1/gems:
+    get:
+      summary: "List gem download statistics"
+      description: "Returns cached download counts for all tracked Ruby gems. Refreshed hourly via a Sidekiq cron job."
+      tags: ["Gems"]
+      responses:
+        "200":
+          description: "Array of gem stats"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GemStat"
+        "500":
+          description: "Server error"
+
+  /api/v1/contact:
+    post:
+      summary: "Submit a contact message"
+      description: "Saves a contact form submission and enqueues a notification email via Postmark."
+      tags: ["Contact"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "201":
+          description: "Message sent successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "sent"
+        "422":
+          description: "Validation failed"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+components:
+  schemas:
+    GemStat:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: "rails-guarddog"
+        downloads:
+          type: integer
+          example: 1957
+        version:
+          type: string
+          example: "0.1.8"
+        updated_at:
+          type: string
+          format: date-time
+
+    ContactInput:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: "Your name"
+          example: "Jane Recruiter"
+        email:
+          type: string
+          format: email
+          description: "Your email address"
+          example: "jane@company.com"
+        message:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          description: "Your message"
+          example: "Hi Syed, saw your portfolio and wanted to chat about a role..."
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

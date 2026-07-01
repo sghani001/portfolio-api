@@ -1,44 +1,10 @@
-class RefreshGemStatsJob < Sidekiq::Job
-
-  # Sidekiq job that fetches and updates gem statistics
-  # This job runs hourly to keep gem stats fresh but avoids hitting RubyGems.org rate limits by caching the data
-
-  include Sidekiq::Worker
-
-  # Queue priority: gem stats updates
-  sidekiq_options queue: :default
+class RefreshGemStatsJob < ApplicationJob
+  queue_as :default
 
   def perform(*args)
-    # Call the rubygems client for each gem and update the cache
-    GEM_NAMES.each do |gem_name|
-      update_gem_stats(gem_name)
-    end
-  end
+    gems = RubygemsClient.fetch_all
 
-  private
-
-  # Gem names to track for statistics
-  # These are the gems I maintain and want to showcase in the portfolio
-  GEM_NAMES = %w[
-    sinatra-contrib
-    sinatra
-    mailconf
-    sidekiq-scheduler
-    rack-attack
-    httparty
-    highline
-    celluloid
-    rake
-    faraday
-  ].freeze
-
-  # Fetches gem stats from RubyGems API and updates the GemStat record
-  # If the API call fails, it will be logged and the job will continue with the next gem
-  def update_gem_stats(gem_name)
-    begin
-      client = RubygemsClient.new(gem_name)
-      gem_data = client.fetch
-
+    gems.each do |gem_data|
       GemStat.upsert(
         {
           name: gem_data[:name],
@@ -48,10 +14,11 @@ class RefreshGemStatsJob < Sidekiq::Job
         },
         unique_by: :name
       )
-
-      logger.info "Updated GemStat for #{gem_name}: #{gem_data[:downloads]} downloads"
-    rescue RubygemsClientError => e
-      logger.error "Failed to update GemStat for #{gem_name}: #{e.message}"
     end
+
+    active_names = gems.map { |g| g[:name] }
+    GemStat.where.not(name: active_names).destroy_all
+  rescue RubygemsClientError => e
+    logger.error "Failed to sync gems: #{e.message}"
   end
 end

@@ -39,18 +39,19 @@ gem "rack-attack"
 # RubyGems API client
 gem "httparty"
 
-# Background job processing
-gem "sidekiq", "~> 7.0"
-gem "sidekiq-cron", "~> 1.0"
-# Redis adapter for Sidekiq
-gem "redis", "~> 5.0"
-
-# Rate limiting for API endpoints
-gem "rack-attack"
+# Solid Queue — database-backed background jobs (free on Render, no Redis needed)
+# Recurring schedule is configured in config/recurring.yml
 
 # Email delivery - free tier available with Resend, using Postmark as demo
 gem "mail", "~> 2.0"
 gem "postmark"
+
+# API documentation - Swagger UI for testing endpoints
+gem "rswag-api", "~> 2.16", require: "rswag/api"
+gem "rswag-ui", "~> 2.16", require: "rswag/ui"
+
+# Load .env in development/test
+gem "dotenv-rails", "~> 3.0", groups: [:development, :test]
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -64,4 +65,7 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # rswag specs generator
+  gem "rswag-specs", "~> 2.16"
 end
