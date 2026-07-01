@@ -39,6 +39,10 @@ gem "rack-attack"
 # RubyGems API client
 gem "httparty"
 
+# Authentication
+gem "devise", "~> 4.9"
+gem "devise-jwt", "~> 0.11"
+
 # Solid Queue — database-backed background jobs (free on Render, no Redis needed)
 # Recurring schedule is configured in config/recurring.yml
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_153000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,12 +27,86 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_130000) do
     t.index ["sent_at"], name: "index_contact_messages_on_sent_at"
   end
 
+  create_table "educations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "degree", null: false
+    t.text "description"
+    t.string "duration"
+    t.date "end_date"
+    t.string "field"
+    t.string "gpa"
+    t.string "logo_url"
+    t.integer "position", default: 0
+    t.string "school", null: false
+    t.date "start_date"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "experiences", force: :cascade do |t|
+    t.string "company", null: false
+    t.string "company_url"
+    t.datetime "created_at", null: false
+    t.boolean "current", default: false
+    t.text "description"
+    t.date "end_date"
+    t.string "location"
+    t.string "logo_url"
+    t.jsonb "points", default: []
+    t.integer "position", default: 0
+    t.string "role"
+    t.jsonb "roles", default: []
+    t.date "start_date"
+    t.datetime "updated_at", null: false
+  end
+
   create_table "gem_stats", force: :cascade do |t|
     t.bigint "downloads", default: 0, null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.string "version", null: false
     t.index ["name"], name: "index_gem_stats_on_name", unique: true
+  end
+
+  create_table "profiles", force: :cascade do |t|
+    t.text "about_extra"
+    t.jsonb "additional_contacts", default: []
+    t.boolean "available_for_hire", default: true
+    t.string "avatar_url"
+    t.text "bio"
+    t.string "contact_email"
+    t.datetime "created_at", null: false
+    t.string "headline"
+    t.jsonb "hero_bullets", default: []
+    t.string "leetcode_url"
+    t.string "location"
+    t.string "name"
+    t.string "phone"
+    t.string "resume_url"
+    t.jsonb "skills", default: []
+    t.jsonb "social_links", default: {}
+    t.string "tagline"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.string "website"
+    t.index ["user_id"], name: "index_profiles_on_user_id"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.jsonb "engineering", default: []
+    t.boolean "featured", default: false
+    t.string "github_url"
+    t.jsonb "images", default: []
+    t.text "long_description"
+    t.jsonb "metrics", default: []
+    t.integer "position", default: 0
+    t.text "problem"
+    t.text "solution"
+    t.jsonb "tech_stack", default: []
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.string "url"
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -156,6 +230,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_130000) do
     t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
   end
 
+  create_table "users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.string "jti", null: false
+    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at"
+    t.string "reset_password_token"
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["jti"], name: "index_users_on_jti", unique: true
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
+  add_foreign_key "profiles", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

@@ -2,8 +2,7 @@ openapi: "3.0.3"
 info:
   title: "Syed Ghani Portfolio API"
   description: |
-    Live API powering the gem-stats widget and contact form at [syedghani.is-a.dev](https://syedghani.is-a.dev).
-    Built with Rails 8 + PostgreSQL + Sidekiq.
+    Live API powering syedghani.is-a.dev. Built with Rails 8 + PostgreSQL + Solid Queue.
   version: "1.0.0"
   contact:
     name: "Syed M. Ghani"
@@ -20,7 +19,6 @@ paths:
   /api/v1/health:
     get:
       summary: "Check API health and RubyGems connectivity"
-      description: "Returns whether the RUBYGEMS_API_KEY is set, the RubyGems API is reachable, and how many gems are tracked."
       tags: ["Health"]
       responses:
         "200":
@@ -30,10 +28,336 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /api/v1/auth/sign_in:
+    post:
+      summary: "Sign in and receive a JWT token"
+      tags: ["Auth"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: "Returns JWT token"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  email:
+                    type: string
+        "401":
+          description: "Invalid credentials"
+
+  /api/v1/auth/me:
+    get:
+      summary: "Get current authenticated user"
+      tags: ["Auth"]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: "User info"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+        "401":
+          description: "Unauthorized"
+
+  /api/v1/profile:
+    get:
+      summary: "Get public profile"
+      tags: ["Profile"]
+      responses:
+        "200":
+          description: "Profile data"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          description: "Profile not found"
+    put:
+      summary: "Update profile (authenticated)"
+      tags: ["Profile"]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: "Updated profile"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: "Unauthorized"
+        "422":
+          description: "Validation failed"
+
+  /api/v1/projects:
+    get:
+      summary: "List all projects"
+      tags: ["Projects"]
+      responses:
+        "200":
+          description: "Array of projects"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      summary: "Create a project (authenticated)"
+      tags: ["Projects"]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: "Created project"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /api/v1/projects/{id}:
+    get:
+      summary: "Get a project by ID"
+      tags: ["Projects"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Project data"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    put:
+      summary: "Update a project (authenticated)"
+      tags: ["Projects"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "200":
+          description: "Updated project"
+    delete:
+      summary: "Delete a project (authenticated)"
+      tags: ["Projects"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "Deleted"
+
+  /api/v1/experiences:
+    get:
+      summary: "List all work experiences"
+      tags: ["Experience"]
+      responses:
+        "200":
+          description: "Array of experiences"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Experience"
+    post:
+      summary: "Create an experience (authenticated)"
+      tags: ["Experience"]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperienceInput"
+      responses:
+        "201":
+          description: "Created experience"
+
+  /api/v1/experiences/{id}:
+    get:
+      summary: "Get an experience by ID"
+      tags: ["Experience"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Experience data"
+    put:
+      summary: "Update an experience (authenticated)"
+      tags: ["Experience"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExperienceInput"
+      responses:
+        "200":
+          description: "Updated experience"
+    delete:
+      summary: "Delete an experience (authenticated)"
+      tags: ["Experience"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "Deleted"
+
+  /api/v1/educations:
+    get:
+      summary: "List all education entries"
+      tags: ["Education"]
+      responses:
+        "200":
+          description: "Array of education entries"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Education"
+    post:
+      summary: "Create an education entry (authenticated)"
+      tags: ["Education"]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EducationInput"
+      responses:
+        "201":
+          description: "Created education entry"
+
+  /api/v1/educations/{id}:
+    get:
+      summary: "Get an education entry by ID"
+      tags: ["Education"]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Education data"
+    put:
+      summary: "Update an education entry (authenticated)"
+      tags: ["Education"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EducationInput"
+      responses:
+        "200":
+          description: "Updated education entry"
+    delete:
+      summary: "Delete an education entry (authenticated)"
+      tags: ["Education"]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: "Deleted"
+
   /api/v1/gems:
     get:
       summary: "List gem download statistics"
-      description: "Returns cached download counts for all tracked Ruby gems. Refreshed hourly via a Sidekiq cron job."
+      description: "Returns cached download counts for all tracked Ruby gems. Refreshed hourly via Solid Queue."
       tags: ["Gems"]
       responses:
         "200":
@@ -77,26 +401,141 @@ paths:
                 $ref: "#/components/schemas/ValidationError"
 
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
       properties:
         api_key_set:
           type: boolean
-          description: "Whether RUBYGEMS_API_KEY is configured"
         gems_tracked:
           type: integer
-          description: "Number of gems in the local database"
         rubygems_connectivity:
           type: string
           enum: [ok, error]
-          description: "Whether RubyGems.org API is reachable"
         rubygems_gems_count:
           type: integer
-          description: "Number of gems owned on RubyGems.org"
         rubygems_error:
           type: string
-          description: "Error message if connectivity failed"
+
+    Profile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        headline:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        avatar_url:
+          type: string
+        resume_url:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        additional_contacts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              value:
+                type: string
+              label:
+                type: string
+        social_links:
+          type: object
+          properties:
+            github:
+              type: string
+            linkedin:
+              type: string
+            twitter:
+              type: string
+        skills:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              category:
+                type: string
+              proficiency:
+                type: integer
+        available_for_hire:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        headline:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        avatar_url:
+          type: string
+        resume_url:
+          type: string
+        phone:
+          type: string
+        website:
+          type: string
+        contact_email:
+          type: string
+          format: email
+        additional_contacts:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              value:
+                type: string
+              label:
+                type: string
+        social_links:
+          type: object
+        skills:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              category:
+                type: string
+              proficiency:
+                type: integer
+        available_for_hire:
+          type: boolean
+
     GemStat:
       type: object
       properties:
@@ -123,18 +562,15 @@ components:
           type: string
           minLength: 2
           maxLength: 100
-          description: "Your name"
           example: "Jane Recruiter"
         email:
           type: string
           format: email
-          description: "Your email address"
           example: "jane@company.com"
         message:
           type: string
           minLength: 10
           maxLength: 5000
-          description: "Your message"
           example: "Hi Syed, saw your portfolio and wanted to chat about a role..."
 
     ValidationError:
@@ -146,3 +582,167 @@ components:
           type: array
           items:
             type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        long_description:
+          type: string
+        url:
+          type: string
+        github_url:
+          type: string
+        tech_stack:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        position:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        long_description:
+          type: string
+        url:
+          type: string
+        github_url:
+          type: string
+        tech_stack:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        featured:
+          type: boolean
+        position:
+          type: integer
+
+    Experience:
+      type: object
+      properties:
+        id:
+          type: integer
+        company:
+          type: string
+        role:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        current:
+          type: boolean
+        logo_url:
+          type: string
+        position:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ExperienceInput:
+      type: object
+      properties:
+        company:
+          type: string
+        role:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        current:
+          type: boolean
+        logo_url:
+          type: string
+        position:
+          type: integer
+
+    Education:
+      type: object
+      properties:
+        id:
+          type: integer
+        school:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        logo_url:
+          type: string
+        position:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EducationInput:
+      type: object
+      properties:
+        school:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        logo_url:
+          type: string
+        position:
+          type: integer
