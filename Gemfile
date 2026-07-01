@@ -40,7 +40,7 @@ gem "rack-attack"
 gem "httparty"
 
 # Background job processing
-gem "sidekiq", "~> 7.0"
+gem "sidekiq", "~> 8.1"
 gem "sidekiq-cron", "~> 1.0"
 # Redis adapter for Sidekiq
 gem "redis", "~> 5.0"
