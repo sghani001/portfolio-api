@@ -46,9 +46,9 @@ gem "devise-jwt", "~> 0.11"
 # Solid Queue — database-backed background jobs (free on Render, no Redis needed)
 # Recurring schedule is configured in config/recurring.yml
 
-# Email delivery - free tier available with Resend, using Postmark as demo
+# Email delivery via Resend SMTP (free, 3k emails/month, no gem needed — pure Rails SMTP)
+# Sign up free at https://resend.com and set RESEND_API_KEY in Render env vars.
 gem "mail", "~> 2.0"
-gem "postmark"
 
 # API documentation - Swagger UI for testing endpoints
 gem "rswag-api", "~> 2.16", require: "rswag/api"
@@ -60,6 +60,9 @@ gem "dotenv-rails", "~> 3.0", groups: [:development, :test]
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+
+  # Preview emails in the browser instead of sending — no SMTP needed locally
+  gem "letter_opener"
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false

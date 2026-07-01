@@ -30,13 +30,34 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Enable raising delivery errors during development so failures are visible in logs.
+  config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+
+  # Delivery configuration for development:
+  # - Default: letter_opener — opens emails in the browser, no SMTP needed.
+  # - Set RESEND_SMTP_DEV=true to actually send via Resend SMTP (same as production).
+  if ENV["RESEND_SMTP_DEV"] == "true" && ENV["RESEND_API_KEY"].present?
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address:              "smtp.resend.com",
+      port:                 587,
+      domain:               ENV.fetch("HOST", "localhost"),
+      user_name:            "resend",
+      password:             ENV["RESEND_API_KEY"],
+      authentication:       :plain,
+      enable_starttls_auto: true
+    }
+  else
+    # Opens a browser tab showing the email — works on Windows with no SMTP setup
+    config.action_mailer.delivery_method = :letter_opener
+    config.action_mailer.perform_deliveries = true
+  end
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

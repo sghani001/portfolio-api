@@ -52,16 +52,25 @@ Rails.application.configure do
   # Replace the default in-process and non-durable queuing backend for Active Job.
   # config.active_job.queue_adapter = :resque
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Raise delivery errors in production so failures appear in Render logs.
+  config.action_mailer.raise_delivery_errors = true
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "syedghani.is-a.dev" }
+  config.action_mailer.default_url_options = { host: ENV.fetch("HOST", "syedghani.is-a.dev") }
 
-  # Use Postmark for email delivery (free tier, no credit card required)
-  config.action_mailer.delivery_method = :postmark
-  config.action_mailer.postmark_settings = { api_key: ENV["POSTMARK_API_KEY"] }
+  # Use Resend SMTP for free email delivery (3,000 emails/month, no credit card).
+  # Set RESEND_API_KEY in Render environment variables.
+  # SMTP docs: https://resend.com/docs/send-with-smtp
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              "smtp.resend.com",
+    port:                 587,
+    domain:               ENV.fetch("HOST", "syedghani.is-a.dev"),
+    user_name:            "resend",
+    password:             ENV["RESEND_API_KEY"],
+    authentication:       :plain,
+    enable_starttls_auto: true
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

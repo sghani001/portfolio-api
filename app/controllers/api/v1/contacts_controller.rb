@@ -6,7 +6,7 @@ module Api
         message = ContactMessage.new(contact_params)
 
         if message.save
-          SendContactEmailJob.perform_async(message.id)
+          SendContactEmailJob.perform_now(message.id)
           render status: :created, json: { status: "sent" }
         else
           render status: :unprocessable_entity, json: {
